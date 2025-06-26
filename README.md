@@ -6,32 +6,32 @@ Detect if the prompt being sent to the LLM is safe or not.
 
 **Train**
 ```bash
-python model-binary.py --mode train --epochs 3 --batch_size 16
+python classifiers/binary.py --mode train --epochs 10 --batch_size 64 --num_workers 4
 ```
 
 **Evaluate**
 ```bash
-python model-binary.py --mode eval
+python classifiers/binary.py --mode eval
 ```
 
 **Predict**
 ```bash
-python model-binary.py --mode predict --text "this is malice"
+python classifiers/binary.py --mode predict --text "your text here"
 ```
 
 ## Multi-class Classification ("Safe", "Jailbreak", "Sensitive", "Abuse")
 
 **Train**
 ```bash
-python model-multi-class.py --mode train --epochs 3 --batch_size 16
+python classifiers/multilabel.py --mode train --epochs 10 --batch_size 64 --num_workers 4
 ```
 
 **Evaluate**
 ```bash
-python model-multi-class.py --mode eval
+python classifiers/binary.py --mode eval
 ```
 
 **Predict**
 ```bash
-python model-multi-class.py --mode predict --text "this is a jailbreak prompt"
+python classifiers/multilabel.py --mode predict --text "this is a jailbreak prompt"
 ```

@@ -5,20 +5,31 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 from sklearn.metrics import classification_report
+from tqdm import tqdm
 
 # Multi-class labels
 # LABELS = ["safe", "jailbreak", "sensitive", "abuse"]
 # LABEL2ID = {label: i for i, label in enumerate(LABELS)}
 # ID2LABEL = {i: label for i, label in enumerate(LABELS)}
 
-# Dataset class for text/label pairs
+# Dataset class for text/label pairs - optimized for large datasets
 class TextDataset(Dataset):
     def __init__(self, texts, labels, tokenizer, max_length=128):
-        self.encodings = tokenizer(texts, truncation=True, padding=True, max_length=max_length, return_tensors="pt")
+        self.texts = texts
         self.labels = torch.tensor(labels)
+        self.tokenizer = tokenizer
+        self.max_length = max_length
 
     def __getitem__(self, idx):
-        item = {key: val[idx] for key, val in self.encodings.items()}
+        text = self.texts[idx]
+        encoding = self.tokenizer(
+            text, 
+            truncation=True, 
+            padding='max_length', 
+            max_length=self.max_length, 
+            return_tensors="pt"
+        )
+        item = {key: val.squeeze(0) for key, val in encoding.items()}
         item['labels'] = self.labels[idx]
         return item
 
@@ -37,11 +48,12 @@ class PromptClassifier(nn.Module):
         cls_output = output.last_hidden_state[:, 0]  # [CLS] token
         return self.classifier(cls_output)
 
-# Training loop
+# Training loop with progress tracking
 def train(model, dataloader, optimizer, criterion, device):
     model.train()
     total_loss = 0
-    for batch in dataloader:
+    progress_bar = tqdm(dataloader, desc="Training")
+    for batch in progress_bar:
         input_ids = batch['input_ids'].to(device)
         attention_mask = batch['attention_mask'].to(device)
         labels = batch['labels'].to(device)
@@ -51,14 +63,16 @@ def train(model, dataloader, optimizer, criterion, device):
         loss.backward()
         optimizer.step()
         total_loss += loss.item()
+        progress_bar.set_postfix({'loss': f'{loss.item():.4f}'})
     return total_loss / len(dataloader)
 
-# Evaluation loop
+# Evaluation loop with progress tracking
 def evaluate(model, dataloader, device, LABELS: list[str]):
     model.eval()
     all_preds, all_labels = [], []
+    progress_bar = tqdm(dataloader, desc="Evaluating")
     with torch.no_grad():
-        for batch in dataloader:
+        for batch in progress_bar:
             input_ids = batch['input_ids'].to(device)
             attention_mask = batch['attention_mask'].to(device)
             labels = batch['labels'].to(device)
@@ -89,8 +103,17 @@ def load_model(path, device, LABELS: list[str]):
     model.to(device)
     return model
 
+# Setup multi-GPU if available
+def setup_device():
+    if torch.cuda.device_count() > 1:
+        print(f"Using {torch.cuda.device_count()} GPUs!")
+        device = torch.device('cuda')
+        return device, True
+    else:
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        return device, False
 
-__all__ = ["TextDataset", "PromptClassifier", "train", "evaluate", "predict", "save_model", "load_model"]
+__all__ = ["TextDataset", "PromptClassifier", "train", "evaluate", "predict", "save_model", "load_model", "setup_device"]
 
 # if __name__ == '__main__':
 #     parser = argparse.ArgumentParser(description="Train or evaluate the multi-class PromptClassifier.")
