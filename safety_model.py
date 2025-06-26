@@ -6,7 +6,8 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import pandas as pd
 from pandas import Series
-from classifiers.multilabel import TextDataset, load_model, PromptClassifier, train, save_model, evaluate, predict, setup_device
+from classifiers.multilabel import TextDataset, load_model, PromptClassifier, train, save_model, evaluate, predict
+from classifiers.utils import setup_device
 
 # Multi-class labels
 LABELS = ["sexually explicit information", "harassment", "hate speech", "dangerous content", "safe"]
@@ -35,6 +36,29 @@ if __name__ == '__main__':
     parser.add_argument('--num_workers', type=int, default=4)  # Add num_workers for faster data loading
     args = parser.parse_args()
 
+    # Setup device and multi-GPU
+    device, use_multi_gpu = setup_device()
+
+    # Load existing model or create new one
+    model_path = os.path.join(args.save_dir, MODEL_NAME)
+    if os.path.exists(model_path):
+        print(f"Loading existing model from {model_path}")
+        model = load_model(args.save_dir, device, LABELS, MODEL_NAME)
+    else:
+        print("Initializing new model.")
+        model = PromptClassifier(labels=LABELS).to(device)
+
+    # Load tokenizer
+    tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
+
+    # Predict using model
+    if args.mode == 'predict':
+        if len(args.text) == 0:
+            raise ValueError("text cannot be empty")
+        answer = predict(model, tokenizer, args.text, device, ID2LABEL)
+        print(answer)
+        exit(0)
+
     # Load data
     print("Loading dataset...")
     df = pd.read_csv(os.path.join("./datasets", "qualifire-safety-benchmark.csv"))
@@ -45,11 +69,7 @@ if __name__ == '__main__':
         labels.append(LABEL2ID[get_label(row)])
 
     print(f"Dataset loaded: {len(texts)} samples")
-
-    # Setup device and multi-GPU
-    device, use_multi_gpu = setup_device()
     
-    tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
     dataset = TextDataset(texts, labels, tokenizer)
     dataloader = DataLoader(
         dataset, 
@@ -58,14 +78,6 @@ if __name__ == '__main__':
         num_workers=args.num_workers,
         pin_memory=True
     )
-
-    model_path = os.path.join(args.save_dir, MODEL_NAME)
-    if os.path.exists(model_path):
-        print(f"Loading existing model from {model_path}")
-        model = load_model(args.save_dir, device, LABELS, MODEL_NAME)
-    else:
-        print("Initializing new model.")
-        model = PromptClassifier(labels=LABELS).to(device)
     
     # Use DataParallel for multi-GPU
     if use_multi_gpu:
@@ -90,8 +102,3 @@ if __name__ == '__main__':
         print(f"Model saved to {args.save_dir}")
     elif args.mode == 'eval':
         evaluate(model, dataloader, device, LABELS)
-    elif args.mode == 'predict':
-        if len(args.text) == 0:
-            raise ValueError("text cannot be empty")
-        answer = predict(model, tokenizer, args.text, device, ID2LABEL)
-        print(answer)

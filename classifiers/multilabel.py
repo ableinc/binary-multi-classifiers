@@ -103,17 +103,7 @@ def load_model(path, device, LABELS: list[str], model_name: str):
     model.to(device)
     return model
 
-# Setup multi-GPU if available
-def setup_device():
-    if torch.cuda.device_count() > 1:
-        print(f"Using {torch.cuda.device_count()} GPUs!")
-        device = torch.device('cuda')
-        return device, True
-    else:
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        return device, False
-
-__all__ = ["TextDataset", "PromptClassifier", "train", "evaluate", "predict", "save_model", "load_model", "setup_device"]
+__all__ = ["TextDataset", "PromptClassifier", "train", "evaluate", "predict", "save_model", "load_model"]
 
 # if __name__ == '__main__':
 #     parser = argparse.ArgumentParser(description="Train or evaluate the multi-class PromptClassifier.")
