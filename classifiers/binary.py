@@ -94,7 +94,7 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=int, default=3)
     parser.add_argument('--batch_size', type=int, default=16)
     args = parser.parse_args()
-    print(args)
+
     # Example data (replace with real data loading)
     texts = ["This is safe.", "This is malicious!"] * 100
     labels = [0, 1] * 100
