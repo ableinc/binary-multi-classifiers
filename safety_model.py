@@ -62,7 +62,7 @@ if __name__ == '__main__':
     model_path = os.path.join(args.save_dir, MODEL_NAME)
     if os.path.exists(model_path):
         print(f"Loading existing model from {model_path}")
-        model = load_model(args.save_dir, device, LABELS)
+        model = load_model(args.save_dir, device, LABELS, MODEL_NAME)
     else:
         print("Initializing new model.")
         model = PromptClassifier(labels=LABELS).to(device)
@@ -86,7 +86,7 @@ if __name__ == '__main__':
             model_to_save = model.module
         else:
             model_to_save = model
-        save_model(model_to_save, args.save_dir)
+        save_model(model_to_save, args.save_dir, MODEL_NAME)
         print(f"Model saved to {args.save_dir}")
     elif args.mode == 'eval':
         evaluate(model, dataloader, device, LABELS)

@@ -93,13 +93,13 @@ def predict(model, tokenizer, text, device, ID2LABEL: dict[int, str]):
         return ID2LABEL[pred.__int__()]
 
 # Model save/load
-def save_model(model, path):
+def save_model(model, path, model_name):
     os.makedirs(path, exist_ok=True)
-    torch.save(model.state_dict(), os.path.join(path, "model.pt"))
+    torch.save(model.state_dict(), os.path.join(path, model_name))
 
-def load_model(path, device, LABELS: list[str]):
+def load_model(path, device, LABELS: list[str], model_name: str):
     model = PromptClassifier(labels=LABELS)
-    model.load_state_dict(torch.load(os.path.join(path, "model.pt"), map_location=device))
+    model.load_state_dict(torch.load(os.path.join(path, model_name), map_location=device))
     model.to(device)
     return model
 

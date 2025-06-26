@@ -88,13 +88,13 @@ def predict(model, tokenizer, text, device):
         return bool(pred)
 
 # Model save/load
-def save_model(model, path):
+def save_model(model, path, model_name):
     os.makedirs(path, exist_ok=True)
-    torch.save(model.state_dict(), os.path.join(path, "model.pt"))
+    torch.save(model.state_dict(), os.path.join(path, model_name))
 
-def load_model(path, device):
+def load_model(path, device, model_name: str):
     model = PromptClassifier()
-    model.load_state_dict(torch.load(os.path.join(path, "model.pt"), map_location=device))
+    model.load_state_dict(torch.load(os.path.join(path, model_name), map_location=device))
     model.to(device)
     return model
 
@@ -115,11 +115,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Train or evaluate the binary PromptClassifier.")
     parser.add_argument('--mode', choices=['train', 'eval', 'predict'], required=True)
     parser.add_argument('--text', type=str, default="")
-    parser.add_argument('--save_dir', type=str, default="./binary")
+    parser.add_argument('--save_dir', type=str, default="./")
     parser.add_argument('--epochs', type=int, default=3)
     parser.add_argument('--batch_size', type=int, default=32)  # Increased batch size
     parser.add_argument('--num_workers', type=int, default=4)  # Add num_workers for faster data loading
     args = parser.parse_args()
+    MODEL_NAME = "binary_model.pt"
 
     # Example data (replace with real data loading)
     texts = ["This is safe.", "This is malicious!"] * 100
@@ -140,7 +141,7 @@ if __name__ == '__main__':
     model_path = os.path.join(args.save_dir, "model.pt")
     if os.path.exists(model_path):
         print(f"Loading existing model from {model_path}")
-        model = load_model(args.save_dir, device)
+        model = load_model(args.save_dir, device, MODEL_NAME)
     else:
         print("Initializing new model.")
         model = PromptClassifier().to(device)
@@ -164,7 +165,7 @@ if __name__ == '__main__':
             model_to_save = model.module
         else:
             model_to_save = model
-        save_model(model_to_save, args.save_dir)
+        save_model(model_to_save, args.save_dir, MODEL_NAME)
         print(f"Model saved to {args.save_dir}")
     elif args.mode == 'eval':
         evaluate(model, dataloader, device)
