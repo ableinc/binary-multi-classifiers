@@ -93,9 +93,9 @@ def save_model(model, path, model_name):
     os.makedirs(path, exist_ok=True)
     torch.save(model.state_dict(), os.path.join(path, model_name))
 
-def load_model(path, device, model_name: str):
+def load_model(model_path, device):
     model = PromptClassifier()
-    model.load_state_dict(torch.load(os.path.join(path, model_name), map_location=device))
+    model.load_state_dict(torch.load(model_path, map_location=device))
     model.to(device)
     return model
     
@@ -132,7 +132,7 @@ if __name__ == '__main__':
     model_path = os.path.join(args.save_dir, "model.pt")
     if os.path.exists(model_path):
         print(f"Loading existing model from {model_path}")
-        model = load_model(args.save_dir, device, MODEL_NAME)
+        model = load_model(model_path, device)
     else:
         print("Initializing new model.")
         model = PromptClassifier().to(device)

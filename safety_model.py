@@ -8,6 +8,7 @@ import pandas as pd
 from pandas import Series
 from classifiers.multilabel import TextDataset, load_model, PromptClassifier, train, save_model, evaluate, predict
 from classifiers.utils import setup_device
+import gc
 
 # Multi-class labels
 LABELS = ["sexually explicit information", "harassment", "hate speech", "dangerous content", "safe"]
@@ -36,6 +37,9 @@ if __name__ == '__main__':
     parser.add_argument('--num_workers', type=int, default=4)  # Add num_workers for faster data loading
     args = parser.parse_args()
 
+    torch.cuda.empty_cache()
+    gc.collect()
+
     # Setup device and multi-GPU
     device, use_multi_gpu = setup_device()
 
@@ -43,7 +47,7 @@ if __name__ == '__main__':
     model_path = os.path.join(args.save_dir, MODEL_NAME)
     if os.path.exists(model_path):
         print(f"Loading existing model from {model_path}")
-        model = load_model(args.save_dir, device, LABELS, MODEL_NAME)
+        model = load_model(model_path, device, LABELS)
     else:
         print("Initializing new model.")
         model = PromptClassifier(labels=LABELS).to(device)

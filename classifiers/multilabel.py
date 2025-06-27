@@ -97,9 +97,9 @@ def save_model(model, path, model_name):
     os.makedirs(path, exist_ok=True)
     torch.save(model.state_dict(), os.path.join(path, model_name))
 
-def load_model(path, device, LABELS: list[str], model_name: str):
+def load_model(model_path, device, LABELS: list[str]):
     model = PromptClassifier(labels=LABELS)
-    model.load_state_dict(torch.load(os.path.join(path, model_name), map_location=device))
+    model.load_state_dict(torch.load(model_path, map_location=device))
     model.to(device)
     return model
 
